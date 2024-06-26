@@ -15,7 +15,7 @@ function setPostgresPassword() {
 if [ "$#" -ne 1 ]; then
     echo "usage: <import|run>"
     echo "commands:"
-    echo "    import: Set up the database and import /data/region.osm.pbf"
+    echo "    import: Set up the database and import /data/database/region.osm.pbf"
     echo "    run: Runs Apache and renderd to serve tiles at /tile/{z}/{x}/{y}.png"
     echo "environment variables:"
     echo "    THREADS: defines number of threads used for importing / tile rendering"
@@ -61,15 +61,15 @@ if [ "$1" == "import" ]; then
     setPostgresPassword
 
     # Download Luxembourg as sample if no data is provided
-    if [ ! -f /data/region.osm.pbf ] && [ -z "${DOWNLOAD_PBF:-}" ]; then
-        echo "WARNING: No import file at /data/region.osm.pbf, so importing Luxembourg as example..."
+    if [ ! -f /data/database/region.osm.pbf ] && [ -z "${DOWNLOAD_PBF:-}" ]; then
+        echo "WARNING: No import file at /data/database/region.osm.pbf, so importing Luxembourg as example..."
         DOWNLOAD_PBF="https://download.geofabrik.de/europe/luxembourg-latest.osm.pbf"
         DOWNLOAD_POLY="https://download.geofabrik.de/europe/luxembourg.poly"
     fi
 
     if [ -n "${DOWNLOAD_PBF:-}" ]; then
         echo "INFO: Download PBF file: $DOWNLOAD_PBF"
-        wget ${WGET_ARGS:-} "$DOWNLOAD_PBF" -O /data/region.osm.pbf
+        wget ${WGET_ARGS:-} "$DOWNLOAD_PBF" -O /data/database/region.osm.pbf
         if [ -n "${DOWNLOAD_POLY:-}" ]; then
             echo "INFO: Download PBF-POLY file: $DOWNLOAD_POLY"
             wget ${WGET_ARGS:-} "$DOWNLOAD_POLY" -O /data/region.poly
@@ -78,7 +78,7 @@ if [ "$1" == "import" ]; then
 
     if [ "${UPDATES:-}" == "enabled" ] || [ "${UPDATES:-}" == "1" ]; then
         # determine and set osmosis_replication_timestamp (for consecutive updates)
-        REPLICATION_TIMESTAMP=`osmium fileinfo -g header.option.osmosis_replication_timestamp /data/region.osm.pbf`
+        REPLICATION_TIMESTAMP=`osmium fileinfo -g header.option.osmosis_replication_timestamp /data/database/region.osm.pbf`
 
         # initial setup of osmosis workspace (for consecutive updates)
         sudo -E -u renderer openstreetmap-tiles-update-expire.sh $REPLICATION_TIMESTAMP
@@ -100,7 +100,7 @@ if [ "$1" == "import" ]; then
       --tag-transform-script /data/style/${NAME_LUA:-openstreetmap-carto.lua}  \
       --number-processes ${THREADS:-4}  \
       -S /data/style/${NAME_STYLE:-openstreetmap-carto.style}  \
-      /data/region.osm.pbf  \
+      /data/database/region.osm.pbf  \
       ${OSM2PGSQL_EXTRA_ARGS:-}  \
     ;
 
